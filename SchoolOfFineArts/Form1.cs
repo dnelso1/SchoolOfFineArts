@@ -5,6 +5,7 @@ using SchoolOfFineArtsModels;
 using CrudOperations;
 using DbRepositories;
 using System.ComponentModel;
+using System.Collections.Immutable;
 
 namespace SchoolOfFineArts
 {
@@ -40,6 +41,7 @@ namespace SchoolOfFineArts
         private void Form1_Load(object sender, EventArgs e)
         {
             ClearForm();
+
         }
 
         private Teacher InstantiateTeacher()
@@ -101,25 +103,26 @@ namespace SchoolOfFineArts
             var dbStudents = new BindingList<Student>(studentList);
             dgvStudents.DataSource = dbStudents;
             dgvStudents.Refresh();
+
+            if (tabControl1.SelectedIndex == 3)
+            {
+                lstStudents.Items.Clear();
+                lstStudents.Items.AddRange(dbStudents.OrderBy(s => s.LastName).ToArray());
+            }
         }
 
         private void LoadCourses()
         {
             var courseList = _read.DisplayCourses(_courseRepo);
-            //var teacherList = _read.DisplayTeachers(_teacherRepo);
             var dbCourses = new BindingList<CourseDTO>(courseList);
-            //var dbTeachers = new List<Teacher>(teacherList);
             dgvCourses.DataSource = dbCourses;
-            //foreach (DataGridViewRow row in dgvCourses.Rows)
-            //{
-            //    var tId = Convert.ToInt32(row.Cells[5].Value);
-            //    row.Cells[6].Value = dbTeachers.SingleOrDefault(x => x.Id == tId);
-            //}
             dgvCourses.Refresh();
 
-            //var cList = dgvCourses.DataSource as BindingList<Course>;
-            //var fList = cList.Where(c => c.Name.ToLower().Contains(txtCourseName.Text.ToLower())).ToList();
-            //dgvCourses.DataSource = new BindingList<Course>(fList);
+            if (tabControl1.SelectedIndex == 3)
+            {
+                dgvCourseAssignments.DataSource = dbCourses;
+                dgvCourseAssignments.Refresh();
+            }
         }
 
         private void ClearForm()
@@ -153,6 +156,12 @@ namespace SchoolOfFineArts
                 cboCourseTeacher.SelectedIndex = -1;
                 LoadCourses();
                 dgvCourses.ClearSelection();
+            }
+            else if (tabControl1.SelectedIndex == 3)
+            {
+                LoadCourses();
+                LoadStudents();
+                lstStudents.ClearSelected();
             }
         }
 
