@@ -22,7 +22,7 @@ namespace CrudOperations
             return sList;
         }
 
-        public List<Course> DisplayCourses(CourseRepo cRepo)
+        public List<CourseDTO> DisplayCourses(CourseRepo cRepo)
         {
             var cList = cRepo.GetAll();
             return cList;

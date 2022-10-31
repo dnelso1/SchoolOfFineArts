@@ -71,12 +71,12 @@ namespace SchoolOfFineArts
             c.Department = txtCourseDepartment.Text;
             c.NumCredits = Convert.ToInt32(cboCourseCredits.SelectedItem);
             c.TeacherId = ((Teacher)cboCourseTeacher.SelectedItem).Id;
+            //c.Teacher = ((Teacher)cboCourseTeacher.SelectedItem);
             return c;
         }
 
         private void LoadTeachers(bool isSearch = false)
         {
-            //take advantage of disposability of the connection and context:
             // get list of teachers and put it in the binding list
             var teacherList = _read.DisplayTeachers(_teacherRepo);
             var dbTeachers = new BindingList<Teacher>(teacherList);
@@ -88,7 +88,7 @@ namespace SchoolOfFineArts
                 cboCourseTeacher.SelectedIndex = -1;
                 cboCourseTeacher.Items.Clear();
                 var tList = dgvTeachers.DataSource as BindingList<Teacher>;
-                cboCourseTeacher.Items.AddRange(tList.ToArray());//<Teacher>());
+                cboCourseTeacher.Items.AddRange(tList.ToArray());
                 cboCourseTeacher.DisplayMember = "FriendlyName";
                 cboCourseTeacher.ValueMember = "Id";
             }
@@ -105,11 +105,21 @@ namespace SchoolOfFineArts
 
         private void LoadCourses()
         {
-            //take advantage of disposability of the connection and context:
             var courseList = _read.DisplayCourses(_courseRepo);
-            var dbCourses = new BindingList<Course>(courseList);
+            //var teacherList = _read.DisplayTeachers(_teacherRepo);
+            var dbCourses = new BindingList<CourseDTO>(courseList);
+            //var dbTeachers = new List<Teacher>(teacherList);
             dgvCourses.DataSource = dbCourses;
+            //foreach (DataGridViewRow row in dgvCourses.Rows)
+            //{
+            //    var tId = Convert.ToInt32(row.Cells[5].Value);
+            //    row.Cells[6].Value = dbTeachers.SingleOrDefault(x => x.Id == tId);
+            //}
             dgvCourses.Refresh();
+
+            //var cList = dgvCourses.DataSource as BindingList<Course>;
+            //var fList = cList.Where(c => c.Name.ToLower().Contains(txtCourseName.Text.ToLower())).ToList();
+            //dgvCourses.DataSource = new BindingList<Course>(fList);
         }
 
         private void ClearForm()
@@ -332,10 +342,10 @@ namespace SchoolOfFineArts
             else if (tabControl1.SelectedIndex == 2)
             {
                 LoadCourses();
-                var cList = dgvCourses.DataSource as BindingList<Course>;
+                var cList = dgvCourses.DataSource as BindingList<CourseDTO>;
                 var fList = cList.Where(c => c.Name.ToLower().Contains(txtCourseName.Text.ToLower())).ToList();// &&
                                             //c.FirstName.ToLower().Contains(txtTeacherFirstName.Text.ToLower())).ToList();
-                dgvCourses.DataSource = new BindingList<Course>(fList);
+                dgvCourses.DataSource = new BindingList<CourseDTO>(fList);
                 dgvCourses.ClearSelection();
             }
         }

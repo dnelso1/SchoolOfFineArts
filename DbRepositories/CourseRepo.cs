@@ -13,11 +13,17 @@ namespace DbRepositories
             _optionsBuilder = optionsBuilder;
         }
 
-        public List<Course> GetAll()
+        public List<CourseDTO> GetAll()
         {
             using (var context = new SchoolOfFineArtsDbContext(_optionsBuilder.Options))
             {
-                return context.Courses.ToList();
+                return context.Courses.Include(x => x.Teacher).Select(y => new CourseDTO(){Id = y.Id, 
+                                                                                Name = y.Name, 
+                                                                                Abbreviation = y.Abbreviation,
+                                                                                Department = y.Department, 
+                                                                                NumCredits = y.NumCredits,
+                                                                                TeacherId = y.TeacherId,
+                                                                                TeacherName = y.Teacher.FriendlyName}).ToList();
             }
         }
 
@@ -34,12 +40,15 @@ namespace DbRepositories
         {
             using (var context = new SchoolOfFineArtsDbContext(_optionsBuilder.Options))
             {
+                // build an existing course to check if it exists
                 var existingCourse = context.Courses.SingleOrDefault(course => course.Name.ToLower() == c.Name.ToLower()
                                                                 && course.Abbreviation.ToLower() == c.Abbreviation.ToLower()
                                                                 && course.TeacherId == c.TeacherId);
+                //var teacher = context.Teachers.SingleOrDefault(t => t.Id == c.TeacherId);
 
                 if (existingCourse is null)
                 {
+                    //c.Teacher = teacher;
                     context.Courses.Add(c);
                     context.SaveChanges();
                 }
