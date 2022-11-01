@@ -6,6 +6,7 @@ using CrudOperations;
 using DbRepositories;
 using System.ComponentModel;
 using System.Collections.Immutable;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.ListView;
 
 namespace SchoolOfFineArts
 {
@@ -41,7 +42,6 @@ namespace SchoolOfFineArts
         private void Form1_Load(object sender, EventArgs e)
         {
             ClearForm();
-
         }
 
         private Teacher InstantiateTeacher()
@@ -127,7 +127,7 @@ namespace SchoolOfFineArts
 
         private void ClearForm()
         {
-            
+
             if (tabControl1.SelectedIndex == 0)
             {
                 lblTeacherIdTxt.Text = "0";
@@ -161,40 +161,29 @@ namespace SchoolOfFineArts
             {
                 LoadCourses();
                 LoadStudents();
-                lstStudents.ClearSelected();
+                ResetCourseSelections();
+                ClearStudentSelections();
             }
         }
 
-        private void dgvResults_CellClick(object sender, DataGridViewCellEventArgs e)
+        private void ResetCourseSelections()
         {
-            DataGridViewRow? row;
-            bool isTeacher = false;
-            bool isStudent = false;
-            bool isCourse = false;
-            try
-            {
-                if (tabControl1.SelectedIndex == 0)
-                {
-                    row = dgvTeachers.Rows[e.RowIndex];
-                    isTeacher = true;
-                }
-                else if (tabControl1.SelectedIndex == 1)
-                {
-                    row = dgvStudents.Rows[e.RowIndex];
-                    isStudent = true;
-                }
-                else //if (tabControl1.SelectedTab == tabCourses)
-                {
-                    row = dgvCourses.Rows[e.RowIndex];
-                    isCourse = true;
-                }
-            }
-            catch
-            {
-                ClearForm();
-                return;
-            }
+            txtSelectedCourseId.Text = "0";
+            txtSelectedCourse.Text = string.Empty;
+            dgvCourseAssignments.ClearSelection();
+        }
 
+        private void ClearStudentSelections()
+        {
+            foreach (int i in lstStudents.CheckedIndices)
+            {
+                lstStudents.SetItemCheckState(i, CheckState.Unchecked);
+            }
+            lstStudents.ClearSelected();
+        }
+
+        private int GetDataId(DataGridViewRow row)
+        {
             // grab the row that was clicked in the grid
             int dataId = 0;
             foreach (DataGridViewTextBoxCell cell in row.Cells)
@@ -202,40 +191,106 @@ namespace SchoolOfFineArts
                 if (cell.OwningColumn.Name.Equals("Id", StringComparison.OrdinalIgnoreCase))
                 {
                     dataId = Convert.ToInt32(cell.Value);
-                    if (dataId == 0)
-                    {
-                        ClearForm();
-                        return;
-                    }
                 }
+            }
+            return dataId;
+        }
+
+        private void dgvTeachers_CellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            DataGridViewRow? row;
+            try
+            {
+                row = dgvTeachers.Rows[e.RowIndex];
+            }
+            catch (Exception ex)
+            {
+                ClearForm();
+                return;
             }
 
-            if (isTeacher)
+            var dataId = GetDataId(row);
+            if (dataId <= 0)
             {
-                var t = _read.DisplaySingle(dataId, _teacherRepo);
-                if (t is not null)
+                ClearForm();
+                return;
+            }
+
+            var t = _read.DisplaySingle(dataId, _teacherRepo);
+            if (t is not null)
+            {
+                lblTeacherIdTxt.Text = t.Id.ToString();
+                txtTeacherFirstName.Text = t.FirstName;
+                txtTeacherLastName.Text = t.LastName;
+                numTeacherAge.Value = t.Age;
+            }
+        }
+
+        private void dgvStudents_CellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            DataGridViewRow? row;
+            try
+            {
+                row = dgvStudents.Rows[e.RowIndex];
+            }
+            catch (Exception ex)
+            {
+                ClearForm();
+                return;
+            }
+
+            var dataId = GetDataId(row);
+            if (dataId <= 0)
+            {
+                ClearForm();
+                return;
+            }
+
+            var s = _read.DisplaySingle(dataId, _studentRepo);
+            if (s is not null)
+            {
+                lblStudentIdTxt.Text = s.Id.ToString();
+                txtStudentFirstName.Text = s.FirstName;
+                txtStudentLastName.Text = s.LastName;
+                dtStudentDoB.Value = s.DateOfBirth;
+            }
+        }
+
+        private void dgvCoursesAndAssignments_CellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            DataGridViewRow? row;
+            bool isCourse = false;
+            bool isAssociation = false;
+            try
+            {
+                if (tabControl1.SelectedIndex == 2)
                 {
-                    lblTeacherIdTxt.Text = t.Id.ToString();
-                    txtTeacherFirstName.Text = t.FirstName;
-                    txtTeacherLastName.Text = t.LastName;
-                    numTeacherAge.Value = t.Age;
+                    row = dgvCourses.Rows[e.RowIndex];
+                    isCourse = true;
+                }
+                else
+                {
+                    row = dgvCourseAssignments.Rows[e.RowIndex];
+                    isAssociation = true;
                 }
             }
-            else if (isStudent)
+            catch (Exception ex)
             {
-                var s = _read.DisplaySingle(dataId, _studentRepo);
-                if (s is not null)
-                {
-                    lblStudentIdTxt.Text = s.Id.ToString();
-                    txtStudentFirstName.Text = s.FirstName;
-                    txtStudentLastName.Text = s.LastName;
-                    dtStudentDoB.Value = s.DateOfBirth;
-                }
+                ResetCourseSelections();
+                return;
             }
-            else if (isCourse)
+
+            var dataId = GetDataId(row);
+            if (dataId <= 0)
             {
-                var c = _read.DisplaySingle(dataId, _courseRepo);
-                if (c is not null)
+                ResetCourseSelections();
+                return;
+            }
+
+            var c = _read.DisplaySingle(dataId, _courseRepo);
+            if (c is not null)
+            {
+                if (isCourse)
                 {
                     lblCourseIdTxt.Text = c.Id.ToString();
                     txtCourseName.Text = c.Name;
@@ -256,6 +311,11 @@ namespace SchoolOfFineArts
                             cboCourseTeacher.SelectedItem = item;
                         }
                     }
+                }
+                else if (isAssociation)
+                {
+                    txtSelectedCourseId.Text = c.Id.ToString();
+                    txtSelectedCourse.Text = $"({c.Abbreviation}) {c.Name}";
                 }
             }
         }
@@ -329,12 +389,12 @@ namespace SchoolOfFineArts
 
         private void btnSearch_Click(object sender, EventArgs e)
         {
-            
+
             if (tabControl1.SelectedIndex == 0)
             {
                 LoadTeachers(true);
                 var tList = dgvTeachers.DataSource as BindingList<Teacher>;
-                var fList = tList.Where(t => t.LastName.ToLower().Contains(txtTeacherLastName.Text.ToLower()) && 
+                var fList = tList.Where(t => t.LastName.ToLower().Contains(txtTeacherLastName.Text.ToLower()) &&
                                             t.FirstName.ToLower().Contains(txtTeacherFirstName.Text.ToLower())).ToList();
                 dgvTeachers.DataSource = new BindingList<Teacher>(fList);
                 dgvTeachers.ClearSelection();
@@ -353,10 +413,41 @@ namespace SchoolOfFineArts
                 LoadCourses();
                 var cList = dgvCourses.DataSource as BindingList<CourseDTO>;
                 var fList = cList.Where(c => c.Name.ToLower().Contains(txtCourseName.Text.ToLower())).ToList();// &&
-                                            //c.FirstName.ToLower().Contains(txtTeacherFirstName.Text.ToLower())).ToList();
+                                                                                                               //c.FirstName.ToLower().Contains(txtTeacherFirstName.Text.ToLower())).ToList();
                 dgvCourses.DataSource = new BindingList<CourseDTO>(fList);
                 dgvCourses.ClearSelection();
             }
+        }
+
+        private void btnClearStudentSelections_Click(object sender, EventArgs e)
+        {
+            ClearStudentSelections();
+        }
+
+        private void btnAssociate_Click(object sender, EventArgs e)
+        {
+            // no student or course is selected
+            if (lstStudents.CheckedIndices.Count == 0 || string.IsNullOrWhiteSpace(txtSelectedCourseId.Text) || txtSelectedCourseId.Text == "0")
+            {
+                MessageBox.Show("You must select a course and at least one student.",
+                                        "Invalid Selections",
+                                        MessageBoxButtons.OK,
+                                        MessageBoxIcon.Error);
+                return;
+            }
+
+            var students = lstStudents.CheckedItems.Cast<Student>().ToList();
+            var studentNames = string.Empty;
+            foreach (var s in students)
+            {
+                if (studentNames.Length > 0)
+                {
+                    studentNames = $"{studentNames}, ";
+                }
+                studentNames = $"{studentNames}{s.FirstName} {s.LastName}";
+            }
+            var message = $"Are you sure you want to add {studentNames} to {txtSelectedCourse.Text}";
+            MessageBox.Show(message, "Confirm Add", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
         }
     }
 }
