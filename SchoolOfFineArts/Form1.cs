@@ -7,6 +7,8 @@ using DbRepositories;
 using System.ComponentModel;
 using System.Collections.Immutable;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.ListView;
+using System.Text;
+using System.Windows.Forms;
 
 namespace SchoolOfFineArts
 {
@@ -362,7 +364,7 @@ namespace SchoolOfFineArts
 
         private void btnDelete_Click(object sender, EventArgs e)
         {
-            var confirmDelete = MessageBox.Show("Are you sure you want to delete this item?", "Are you sure?", MessageBoxButtons.YesNo);
+            var confirmDelete = ShowMessageBoxYesNo("Are you sure you want to delete this item?", "Are you sure?");
 
             if (confirmDelete == DialogResult.No)
             {
@@ -417,6 +419,15 @@ namespace SchoolOfFineArts
                 dgvCourses.DataSource = new BindingList<CourseDTO>(fList);
                 dgvCourses.ClearSelection();
             }
+            else if (tabControl1.SelectedIndex == 3)
+            {
+                LoadCourses();
+                var cList = dgvCourseAssignments.DataSource as BindingList<CourseDTO>;
+                var fList = cList.Where(c => c.Name.ToLower().Contains(txtSelectedCourse.Text.ToLower())).ToList();// &&
+                                                                                                                   //c.FirstName.ToLower().Contains(txtTeacherFirstName.Text.ToLower())).ToList();
+                dgvCourseAssignments.DataSource = new BindingList<CourseDTO>(fList);
+                dgvCourseAssignments.ClearSelection();
+            }
         }
 
         private void btnClearStudentSelections_Click(object sender, EventArgs e)
@@ -426,8 +437,11 @@ namespace SchoolOfFineArts
 
         private void btnAssociate_Click(object sender, EventArgs e)
         {
+            var courseId = txtSelectedCourseId.Text;
+            var courseName = txtSelectedCourse.Text;
+
             // no student or course is selected
-            if (lstStudents.CheckedIndices.Count == 0 || string.IsNullOrWhiteSpace(txtSelectedCourseId.Text) || txtSelectedCourseId.Text == "0")
+            if (lstStudents.CheckedIndices.Count == 0 || string.IsNullOrWhiteSpace(courseId) || courseId == "0")
             {
                 MessageBox.Show("You must select a course and at least one student.",
                                         "Invalid Selections",
@@ -437,17 +451,101 @@ namespace SchoolOfFineArts
             }
 
             var students = lstStudents.CheckedItems.Cast<Student>().ToList();
-            var studentNames = string.Empty;
+            var sb = new StringBuilder();
+            var studentNames = sb.ToString();
             foreach (var s in students)
             {
-                if (studentNames.Length > 0)
+                if (sb.Length > 0)
                 {
-                    studentNames = $"{studentNames}, ";
+                    sb.Append(", ");
                 }
-                studentNames = $"{studentNames}{s.FirstName} {s.LastName}";
+                sb.Append($"{s.FirstName} {s.LastName}");
             }
-            var message = $"Are you sure you want to add {studentNames} to {txtSelectedCourse.Text}";
-            MessageBox.Show(message, "Confirm Add", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+
+            var confirmAssociate = ShowMessageBoxYesNo($"Are you sure you want to add {studentNames} to {courseName}?", "Confirm Add");
+
+            if (confirmAssociate == DialogResult.No)
+            {
+                var confirmReset = ShowMessageBoxYesNo("Do you want to clear your Student and Course selections?", "Reset Selections");
+                if (confirmReset == DialogResult.Yes)
+                {
+                    ClearForm();
+                }
+                return;
+            }
+
+            var success = AssociateStudentsToCourse(students, Convert.ToInt32(courseId), courseName);
+            if (success)
+            {
+                ClearForm();
+            }
+        }
+
+        private DialogResult ShowMessageBoxYesNo(string message, string title)
+        {
+            return MessageBox.Show(message, title, MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+        }
+
+        private bool AssociateStudentsToCourse(List<Student> students, int courseId, string courseName)
+        {
+            bool modified = false;
+            using (var context = new SchoolOfFineArtsDbContext(_optionsBuilder.Options))
+            {
+                //check if Course is valid
+                var existingCourse = context.Courses.Include(x => x.CourseEnrollments).SingleOrDefault(t => t.Id == courseId);
+                if (existingCourse is null)
+                {
+                    MessageBox.Show("Course does not exist.");
+                    return false;
+                }
+
+                //iterate the Students
+                foreach (var s in students)
+                {
+                    //check if Student is valid
+                    var existingStudent = context.Students.Include(x => x.CourseEnrollments).SingleOrDefault(stu => stu.Id == s.Id);
+                    if (existingStudent is null)
+                    {
+                        MessageBox.Show($"{existingStudent.FriendlyName} does not exist.");
+                        continue;
+                    }
+
+                    //iterate through the student's CourseEnrollments
+                    var courseExists = false;
+                    foreach (var enrollment in existingStudent.CourseEnrollments)
+                    {
+                        if (enrollment.CourseId == existingCourse.Id)
+                        {
+                            MessageBox.Show($"{existingStudent.FriendlyName} is already in {courseName}");
+                            courseExists = true;
+                            break;
+                        }
+                    }
+
+                    //if the course exists, continue to the next student
+                    if (courseExists)
+                    {
+                        continue;
+                    }
+
+                    //create and add association
+                    CourseEnrollment ce = new CourseEnrollment();
+                    ce.StudentId = existingStudent.Id;
+                    ce.CourseId = existingCourse.Id;
+                    //ce.Student = existingStudent;
+                    //ce.Course = existingCourse;
+                    existingStudent.CourseEnrollments.Add(ce);
+                    //existingCourse.CourseEnrollments.Add(ce);
+
+                    modified = true;
+                }
+                if (modified)
+                {
+                    MessageBox.Show($"Successfully added student(s) to {courseName}");
+                    context.SaveChanges();
+                }
+            }
+            return true;
         }
     }
 }

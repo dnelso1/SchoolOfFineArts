@@ -12,6 +12,7 @@ namespace SchoolOfFineArtsModels
         public string LastName { get; set; }
         [Required]
         public DateTime DateOfBirth { get; set; }
+        public virtual string FriendlyName => $"{FirstName} {LastName}";
         public virtual List<CourseEnrollment> CourseEnrollments { get; set; } = new List<CourseEnrollment>();
 
         public override string ToString()
