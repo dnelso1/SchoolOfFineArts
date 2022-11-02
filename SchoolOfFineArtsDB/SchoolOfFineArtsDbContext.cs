@@ -9,6 +9,7 @@ namespace SchoolOfFineArtsDB
         public DbSet<Teacher> Teachers { get; set; }
         public DbSet<Student> Students { get; set; }
         public DbSet<Course> Courses { get; set; }
+        public DbSet<CoursesInfoDTO> CoursesInfoDTOs { get; set; }
 
 
         public SchoolOfFineArtsDbContext()
@@ -72,6 +73,11 @@ namespace SchoolOfFineArtsDB
                 //    new Course() { Id = 4, Name = "Alex", Abbreviation = "Robinson", Department = seedDate },
                 //    new Course() { Id = 5, Name = "Mark", Abbreviation = "Rimbaugh", Department = seedDate }
                 //);
+            });
+
+            modelBuilder.Entity<CoursesInfoDTO>(x => {
+                x.HasNoKey();
+                x.ToView("CoursesInfoDTOs");
             });
         }
     }

@@ -1,7 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 
 namespace SchoolOfFineArtsModels
 {
+    [Index(nameof(StudentId), nameof(CourseId), IsUnique = true)]
     public class CourseEnrollment
     {
         [Key]

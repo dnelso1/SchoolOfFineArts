@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SchoolOfFineArtsDB;
 
@@ -11,9 +12,10 @@ using SchoolOfFineArtsDB;
 namespace SchoolOfFineArtsDB.Migrations
 {
     [DbContext(typeof(SchoolOfFineArtsDbContext))]
-    partial class SchoolOfFineArtsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20221102134749_Add-Unique-Index-To-Course-Enrollment")]
+    partial class AddUniqueIndexToCourseEnrollment
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -56,7 +58,7 @@ namespace SchoolOfFineArtsDB.Migrations
 
                     b.HasIndex("TeacherId");
 
-                    b.ToTable("Courses", (string)null);
+                    b.ToTable("Courses");
                 });
 
             modelBuilder.Entity("SchoolOfFineArtsModels.CourseEnrollment", b =>
@@ -80,7 +82,7 @@ namespace SchoolOfFineArtsDB.Migrations
                     b.HasIndex("StudentId", "CourseId")
                         .IsUnique();
 
-                    b.ToTable("CourseEnrollment", (string)null);
+                    b.ToTable("CourseEnrollment");
                 });
 
             modelBuilder.Entity("SchoolOfFineArtsModels.Student", b =>
@@ -106,7 +108,7 @@ namespace SchoolOfFineArtsDB.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Students", (string)null);
+                    b.ToTable("Students");
 
                     b.HasData(
                         new
@@ -169,7 +171,7 @@ namespace SchoolOfFineArtsDB.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Teachers", (string)null);
+                    b.ToTable("Teachers");
 
                     b.HasData(
                         new

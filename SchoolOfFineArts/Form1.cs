@@ -452,16 +452,20 @@ namespace SchoolOfFineArts
 
             var students = lstStudents.CheckedItems.Cast<Student>().ToList();
             var sb = new StringBuilder();
-            var studentNames = sb.ToString();
             foreach (var s in students)
             {
-                if (sb.Length > 0)
+                if (sb.Length > 2)
                 {
                     sb.Append(", ");
+                }
+                if (s.Equals(students.Last()))
+                {
+                    sb.Append("and ");
                 }
                 sb.Append($"{s.FirstName} {s.LastName}");
             }
 
+            var studentNames = sb.ToString();
             var confirmAssociate = ShowMessageBoxYesNo($"Are you sure you want to add {studentNames} to {courseName}?", "Confirm Add");
 
             if (confirmAssociate == DialogResult.No)
