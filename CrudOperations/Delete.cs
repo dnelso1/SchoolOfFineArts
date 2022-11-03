@@ -23,5 +23,10 @@ namespace CrudOperations
         {
             cRepo.Delete(id);
         }
+
+        public (bool, string) RemoveCourseEnrollment(int sId, string sName, int cId, string cName, CourseEnrollmentRepo ceRepo)
+        {
+            return ceRepo.Delete(sId, sName, cId, cName);
+        }
     }
 }

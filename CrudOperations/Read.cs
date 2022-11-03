@@ -1,5 +1,6 @@
 ﻿using DbRepositories;
 using SchoolOfFineArtsModels;
+using System.ComponentModel;
 
 namespace CrudOperations
 {
@@ -28,6 +29,12 @@ namespace CrudOperations
             return cList;
         }
 
+        public List<CoursesInfoDTO> DisplayCoursesInfoDTOs(CourseEnrollmentRepo ceRepo)
+        {
+            var ceList = ceRepo.GetAll();
+            return ceList;
+        }
+
         public Teacher DisplaySingle(int dataId, TeacherRepo tRepo)
         {
             var t = tRepo.GetSingle(dataId);
@@ -44,6 +51,12 @@ namespace CrudOperations
         {
             var c = cRepo.GetSingle(dataId);
             return c;
+        }
+
+        public CoursesInfoDTO DisplaySingle(int courseId, int studentId, CourseEnrollmentRepo ceRepo)
+        {
+            var ciDTO = ceRepo.GetSingle(courseId, studentId);
+            return ciDTO;
         }
     }
 }

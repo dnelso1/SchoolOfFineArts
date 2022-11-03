@@ -9,6 +9,8 @@ using System.Collections.Immutable;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.ListView;
 using System.Text;
 using System.Windows.Forms;
+using System.Security.Cryptography;
+using System.Xml.Linq;
 
 namespace SchoolOfFineArts
 {
@@ -21,6 +23,7 @@ namespace SchoolOfFineArts
         private readonly TeacherRepo _teacherRepo;
         private readonly StudentRepo _studentRepo;
         private readonly CourseRepo _courseRepo;
+        private readonly CourseEnrollmentRepo _courseEnrollmentRepo;
         private readonly Create _create;
         private readonly Read _read;
         private readonly Update _update;
@@ -29,24 +32,21 @@ namespace SchoolOfFineArts
         public Form1()
         {
             InitializeComponent();
-            //dgvResults.DataSource = teacherList;
             _cnstr = Program._configuration["ConnectionStrings:SchoolOfFineArtsDB"];
             _optionsBuilder = new DbContextOptionsBuilder<SchoolOfFineArtsDbContext>().UseSqlServer(_cnstr);
             _teacherRepo = new TeacherRepo(_optionsBuilder);
             _studentRepo = new StudentRepo(_optionsBuilder);
             _courseRepo = new CourseRepo(_optionsBuilder);
+            _courseEnrollmentRepo = new CourseEnrollmentRepo(_optionsBuilder);
             _create = new Create();
             _read = new Read();
             _update = new Update();
             _delete = new Delete();
         }
 
-        private void Form1_Load(object sender, EventArgs e)
-        {
-            ClearForm();
-        }
 
-        private Teacher InstantiateTeacher()
+        // INSTANTIATIONS
+        public Teacher InstantiateTeacher()
         {
             var t = new Teacher();
             t.Id = Convert.ToInt32(lblTeacherIdTxt.Text);
@@ -56,7 +56,7 @@ namespace SchoolOfFineArts
             return t;
         }
 
-        private Student InstantiateStudent()
+        public Student InstantiateStudent()
         {
             var s = new Student();
             s.Id = Convert.ToInt32(lblStudentIdTxt.Text);
@@ -66,7 +66,7 @@ namespace SchoolOfFineArts
             return s;
         }
 
-        private Course InstantiateCourse()
+        public Course InstantiateCourse()
         {
             var c = new Course();
             c.Id = Convert.ToInt32(lblCourseIdTxt.Text ?? "0");
@@ -79,7 +79,14 @@ namespace SchoolOfFineArts
             return c;
         }
 
-        private void LoadTeachers(bool isSearch = false)
+
+        // LOAD
+        public void Form1_Load(object sender, EventArgs e)
+        {
+            ClearForm();
+        }
+
+        public void LoadTeachers(bool isSearch = false)
         {
             // get list of teachers and put it in the binding list
             var teacherList = _read.DisplayTeachers(_teacherRepo);
@@ -98,7 +105,7 @@ namespace SchoolOfFineArts
             }
         }
 
-        private void LoadStudents()
+        public void LoadStudents()
         {
             //take advantage of disposability of the connection and context:
             var studentList = _read.DisplayStudents(_studentRepo);
@@ -113,7 +120,7 @@ namespace SchoolOfFineArts
             }
         }
 
-        private void LoadCourses()
+        public void LoadCourses()
         {
             var courseList = _read.DisplayCourses(_courseRepo);
             var dbCourses = new BindingList<CourseDTO>(courseList);
@@ -127,7 +134,17 @@ namespace SchoolOfFineArts
             }
         }
 
-        private void ClearForm()
+        public void LoadCoursesInfoDTOs()
+        {
+            var coursesInfoDTOList = _read.DisplayCoursesInfoDTOs(_courseEnrollmentRepo);
+            var dbCoursesInfoDTOs = new BindingList<CoursesInfoDTO>(coursesInfoDTOList);
+            dgvCoursesInfo.DataSource = dbCoursesInfoDTOs;
+            dgvCoursesInfo.Refresh();
+        }
+
+
+        // RESET/CLEAR
+        public void ClearForm()
         {
 
             if (tabControl1.SelectedIndex == 0)
@@ -163,19 +180,23 @@ namespace SchoolOfFineArts
             {
                 LoadCourses();
                 LoadStudents();
+                LoadCoursesInfoDTOs();
                 ResetCourseSelections();
                 ClearStudentSelections();
+                dgvCoursesInfo.ClearSelection();
             }
         }
 
-        private void ResetCourseSelections()
+        public void ResetCourseSelections()
         {
             txtSelectedCourseId.Text = "0";
             txtSelectedCourse.Text = string.Empty;
+            txtSelectedStudentId.Text = "0";
+            txtSelectedStudent.Text = string.Empty;
             dgvCourseAssignments.ClearSelection();
         }
 
-        private void ClearStudentSelections()
+        public void ClearStudentSelections()
         {
             foreach (int i in lstStudents.CheckedIndices)
             {
@@ -184,10 +205,13 @@ namespace SchoolOfFineArts
             lstStudents.ClearSelected();
         }
 
-        private int GetDataId(DataGridViewRow row)
+
+        // GET INFO
+        public int GetDataId(DataGridViewRow row)
         {
             // grab the row that was clicked in the grid
             int dataId = 0;
+
             foreach (DataGridViewTextBoxCell cell in row.Cells)
             {
                 if (cell.OwningColumn.Name.Equals("Id", StringComparison.OrdinalIgnoreCase))
@@ -198,6 +222,39 @@ namespace SchoolOfFineArts
             return dataId;
         }
 
+        public (int, int) GetCourseAndStudentIds(DataGridViewRow row)
+        {
+            int cId = 0;
+            int sId = 0;
+
+            foreach (DataGridViewTextBoxCell cell in row.Cells)
+            {
+                if (cell.OwningColumn.Name.Equals("CourseId", StringComparison.OrdinalIgnoreCase))
+                {
+                    cId = Convert.ToInt32(cell.Value);
+                }
+                if (cell.OwningColumn.Name.Equals("StudentId", StringComparison.OrdinalIgnoreCase))
+                {
+                    sId = Convert.ToInt32(cell.Value);
+                }
+            }
+            return (cId, sId);
+        }
+
+
+        // DISPLAY MESSAGE BOXES
+        public DialogResult ShowMessageBoxYesNo(string message, string title)
+        {
+            return MessageBox.Show(message, title, MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+        }
+
+        public void ShowMessageBoxOkError(string message, string title)
+        {
+            MessageBox.Show(message, title, MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
+
+        // DATA GRID VIEW CLICKS
         private void dgvTeachers_CellClick(object sender, DataGridViewCellEventArgs e)
         {
             DataGridViewRow? row;
@@ -322,6 +379,38 @@ namespace SchoolOfFineArts
             }
         }
 
+        private void dgvCoursesInfo_CellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            DataGridViewRow? row;
+            try
+            {
+                row = dgvCoursesInfo.Rows[e.RowIndex];
+            }
+            catch (Exception ex)
+            {
+                ClearForm();
+                return;
+            }
+
+            (int cId, int sId) dataId = GetCourseAndStudentIds(row);
+            if (dataId.cId <= 0 || dataId.sId <= 0)
+            {
+                ClearForm();
+                return;
+            }
+
+            var ceDTO = _read.DisplaySingle(dataId.cId, dataId.sId, _courseEnrollmentRepo);
+            if (ceDTO is not null)
+            {
+                txtSelectedStudentId.Text = ceDTO.StudentId.ToString();
+                txtSelectedStudent.Text = ceDTO.StudentName;
+                txtSelectedCourseId.Text = ceDTO.CourseId.ToString();
+                txtSelectedCourse.Text = ceDTO.Course;
+            }
+        }
+
+
+        // BUTTON CLICKS
         private void btnAdd_Click(object sender, EventArgs e)
         {
             if (tabControl1.SelectedIndex == 0)
@@ -338,6 +427,10 @@ namespace SchoolOfFineArts
             {
                 Course c = InstantiateCourse();
                 _create.AddCourse(c, _courseRepo);
+            }
+            else if (tabControl1.SelectedIndex == 3)
+            {
+                AssociateStudentsToCourse();
             }
             ClearForm();
         }
@@ -368,6 +461,7 @@ namespace SchoolOfFineArts
 
             if (confirmDelete == DialogResult.No)
             {
+                ClearForm();
                 return;
             }
 
@@ -385,6 +479,10 @@ namespace SchoolOfFineArts
             {
                 var id = Convert.ToInt32(lblCourseIdTxt.Text);
                 _delete.RemoveCourse(id, _courseRepo);
+            }
+            else if (tabControl1.SelectedIndex == 3)
+            {
+                RemoveStudentFromCourse();
             }
             ClearForm();
         }
@@ -435,7 +533,9 @@ namespace SchoolOfFineArts
             ClearStudentSelections();
         }
 
-        private void btnAssociate_Click(object sender, EventArgs e)
+
+        // CRUD HELPER FUNCTIONS
+        public void AssociateStudentsToCourse()
         {
             var courseId = txtSelectedCourseId.Text;
             var courseName = txtSelectedCourse.Text;
@@ -443,10 +543,7 @@ namespace SchoolOfFineArts
             // no student or course is selected
             if (lstStudents.CheckedIndices.Count == 0 || string.IsNullOrWhiteSpace(courseId) || courseId == "0")
             {
-                MessageBox.Show("You must select a course and at least one student.",
-                                        "Invalid Selections",
-                                        MessageBoxButtons.OK,
-                                        MessageBoxIcon.Error);
+                ShowMessageBoxOkError("You must select a course and at least one student.", "Invalid Selections");
                 return;
             }
 
@@ -478,78 +575,54 @@ namespace SchoolOfFineArts
                 return;
             }
 
-            var success = AssociateStudentsToCourse(students, Convert.ToInt32(courseId), courseName);
-            if (success)
+            (bool success, string msg) result = _create.AddCourseEnrollment(students, Convert.ToInt32(courseId), courseName, _courseEnrollmentRepo);
+
+            MessageBox.Show(result.msg);
+
+            if (result.success)
             {
                 ClearForm();
             }
         }
 
-        private DialogResult ShowMessageBoxYesNo(string message, string title)
+        public void RemoveStudentFromCourse()
         {
-            return MessageBox.Show(message, title, MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-        }
+            var sId = txtSelectedStudentId.Text;
+            var sName = txtSelectedStudent.Text;
+            var cId = txtSelectedCourseId.Text;
+            var cName = txtSelectedCourse.Text;
 
-        private bool AssociateStudentsToCourse(List<Student> students, int courseId, string courseName)
-        {
-            bool modified = false;
-            using (var context = new SchoolOfFineArtsDbContext(_optionsBuilder.Options))
+            if (string.IsNullOrWhiteSpace(sId) || sId == "0")
             {
-                //check if Course is valid
-                var existingCourse = context.Courses.Include(x => x.CourseEnrollments).SingleOrDefault(t => t.Id == courseId);
-                if (existingCourse is null)
-                {
-                    MessageBox.Show("Course does not exist.");
-                    return false;
-                }
-
-                //iterate the Students
-                foreach (var s in students)
-                {
-                    //check if Student is valid
-                    var existingStudent = context.Students.Include(x => x.CourseEnrollments).SingleOrDefault(stu => stu.Id == s.Id);
-                    if (existingStudent is null)
-                    {
-                        MessageBox.Show($"{existingStudent.FriendlyName} does not exist.");
-                        continue;
-                    }
-
-                    //iterate through the student's CourseEnrollments
-                    var courseExists = false;
-                    foreach (var enrollment in existingStudent.CourseEnrollments)
-                    {
-                        if (enrollment.CourseId == existingCourse.Id)
-                        {
-                            MessageBox.Show($"{existingStudent.FriendlyName} is already in {courseName}");
-                            courseExists = true;
-                            break;
-                        }
-                    }
-
-                    //if the course exists, continue to the next student
-                    if (courseExists)
-                    {
-                        continue;
-                    }
-
-                    //create and add association
-                    CourseEnrollment ce = new CourseEnrollment();
-                    ce.StudentId = existingStudent.Id;
-                    ce.CourseId = existingCourse.Id;
-                    //ce.Student = existingStudent;
-                    //ce.Course = existingCourse;
-                    existingStudent.CourseEnrollments.Add(ce);
-                    //existingCourse.CourseEnrollments.Add(ce);
-
-                    modified = true;
-                }
-                if (modified)
-                {
-                    MessageBox.Show($"Successfully added student(s) to {courseName}");
-                    context.SaveChanges();
-                }
+                ShowMessageBoxOkError("You must select at least one student.", "Invalid Selections");
+                return;
             }
-            return true;
+            if (string.IsNullOrWhiteSpace(cId) || cId == "0")
+            {
+                ShowMessageBoxOkError("You must select at least one course.", "Invalid Selections");
+                return;
+            }
+
+            //confirm delete
+            var confirmDelete = ShowMessageBoxYesNo("Are you sure you want to delete this item?", "Are you sure?");
+
+            if (confirmDelete == DialogResult.No)
+            {
+                //if no, reset form
+                dgvCoursesInfo.ClearSelection();
+                //ClearForm();
+                return;
+            }
+
+            //delete association
+            (bool success, string msg) result = _delete.RemoveCourseEnrollment(Convert.ToInt32(sId), sName, Convert.ToInt32(cId), cName, _courseEnrollmentRepo);
+
+            MessageBox.Show(result.msg);
+
+            if (result.success)
+            {
+                dgvCoursesInfo.ClearSelection();
+            }
         }
     }
 }

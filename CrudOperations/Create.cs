@@ -24,5 +24,10 @@ namespace CrudOperations
         {
             cRepo.Add(c);
         }
+
+        public (bool, string) AddCourseEnrollment(List<Student> students, int cId, string cName, CourseEnrollmentRepo ceRepo)
+        {
+            return ceRepo.Add(students, cId, cName, ceRepo);
+        }
     }
 }
