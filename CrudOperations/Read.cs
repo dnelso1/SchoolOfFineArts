@@ -37,25 +37,25 @@ namespace CrudOperations
 
         public Teacher DisplaySingle(int dataId, TeacherRepo tRepo)
         {
-            var t = tRepo.GetSingle(dataId);
+            var t = tRepo.GetById(dataId);
             return t;
         }
 
         public Student DisplaySingle(int dataId, StudentRepo sRepo)
         {
-            var s = sRepo.GetSingle(dataId);
+            var s = sRepo.GetById(dataId);
             return s;
         }
 
         public Course DisplaySingle(int dataId, CourseRepo cRepo)
         {
-            var c = cRepo.GetSingle(dataId);
+            var c = cRepo.GetById(dataId);
             return c;
         }
 
         public CoursesInfoDTO DisplaySingle(int courseId, int studentId, CourseEnrollmentRepo ceRepo)
         {
-            var ciDTO = ceRepo.GetSingle(courseId, studentId);
+            var ciDTO = ceRepo.GetById(courseId, studentId);
             return ciDTO;
         }
     }

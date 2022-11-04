@@ -12,22 +12,22 @@ namespace CrudOperations
 
         public void AddTeacher(Teacher t, TeacherRepo tRepo)
         {
-            tRepo.Add(t);
+            tRepo.Insert(t);
         }
 
         public void AddStudent(Student s, StudentRepo sRepo)
         {
-            sRepo.Add(s);
+            sRepo.Insert(s);
         }
 
         public void AddCourse(Course c, CourseRepo cRepo)
         {
-            cRepo.Add(c);
+            cRepo.Insert(c);
         }
 
         public (bool, string) AddCourseEnrollment(List<Student> students, int cId, string cName, CourseEnrollmentRepo ceRepo)
         {
-            return ceRepo.Add(students, cId, cName, ceRepo);
+            return ceRepo.Insert(students, cId, cName, ceRepo);
         }
     }
 }

@@ -2,15 +2,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using SchoolOfFineArtsDB;
 using SchoolOfFineArtsModels;
-using CrudOperations;
+//using CrudOperations;
 using DbRepositories;
 using System.ComponentModel;
-using System.Collections.Immutable;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.ListView;
 using System.Text;
-using System.Windows.Forms;
-using System.Security.Cryptography;
-using System.Xml.Linq;
+//using GenericRepository;
 
 namespace SchoolOfFineArts
 {
@@ -20,28 +16,28 @@ namespace SchoolOfFineArts
         // use readonly as they are only set at form creation
         private readonly string _cnstr;
         private readonly DbContextOptionsBuilder _optionsBuilder;
-        private readonly TeacherRepo _teacherRepo;
-        private readonly StudentRepo _studentRepo;
-        private readonly CourseRepo _courseRepo;
-        private readonly CourseEnrollmentRepo _courseEnrollmentRepo;
-        private readonly Create _create;
-        private readonly Read _read;
-        private readonly Update _update;
-        private readonly Delete _delete;
+        //private readonly GenericRepository<Teacher> _tRepo;
+        //private readonly GenericRepository<Student> _sRepo;
+        //private readonly GenericRepository<Course> _cRepo;
+        //private readonly GenericRepository<CourseEnrollment> _ceRepo;
+        private readonly TeacherRepo _tRepo;
+        private readonly StudentRepo _sRepo;
+        private readonly CourseRepo _cRepo;
+        private readonly CourseEnrollmentRepo _ceRepo;
 
         public Form1()
         {
             InitializeComponent();
             _cnstr = Program._configuration["ConnectionStrings:SchoolOfFineArtsDB"];
             _optionsBuilder = new DbContextOptionsBuilder<SchoolOfFineArtsDbContext>().UseSqlServer(_cnstr);
-            _teacherRepo = new TeacherRepo(_optionsBuilder);
-            _studentRepo = new StudentRepo(_optionsBuilder);
-            _courseRepo = new CourseRepo(_optionsBuilder);
-            _courseEnrollmentRepo = new CourseEnrollmentRepo(_optionsBuilder);
-            _create = new Create();
-            _read = new Read();
-            _update = new Update();
-            _delete = new Delete();
+            //_tRepo = new GenericRepository<Teacher>(_optionsBuilder);
+            //_sRepo = new GenericRepository<Student>(_optionsBuilder);
+            //_cRepo = new GenericRepository<Course>(_optionsBuilder);
+            //_ceRepo = new GenericRepository<CourseEnrollment>(_optionsBuilder);
+            _tRepo = new TeacherRepo(_optionsBuilder);
+            _sRepo = new StudentRepo(_optionsBuilder);
+            _cRepo = new CourseRepo(_optionsBuilder);
+            _ceRepo = new CourseEnrollmentRepo(_optionsBuilder);
         }
 
 
@@ -89,7 +85,7 @@ namespace SchoolOfFineArts
         public void LoadTeachers(bool isSearch = false)
         {
             // get list of teachers and put it in the binding list
-            var teacherList = _read.DisplayTeachers(_teacherRepo);
+            var teacherList = _tRepo.GetAll();
             var dbTeachers = new BindingList<Teacher>(teacherList);
             dgvTeachers.DataSource = dbTeachers;
             dgvTeachers.Refresh();
@@ -108,7 +104,7 @@ namespace SchoolOfFineArts
         public void LoadStudents()
         {
             //take advantage of disposability of the connection and context:
-            var studentList = _read.DisplayStudents(_studentRepo);
+            var studentList = _sRepo.GetAll();
             var dbStudents = new BindingList<Student>(studentList);
             dgvStudents.DataSource = dbStudents;
             dgvStudents.Refresh();
@@ -122,7 +118,7 @@ namespace SchoolOfFineArts
 
         public void LoadCourses()
         {
-            var courseList = _read.DisplayCourses(_courseRepo);
+            var courseList = _cRepo.GetAll();
             var dbCourses = new BindingList<CourseDTO>(courseList);
             dgvCourses.DataSource = dbCourses;
             dgvCourses.Refresh();
@@ -136,7 +132,7 @@ namespace SchoolOfFineArts
 
         public void LoadCoursesInfoDTOs()
         {
-            var coursesInfoDTOList = _read.DisplayCoursesInfoDTOs(_courseEnrollmentRepo);
+            var coursesInfoDTOList = _ceRepo.GetAll();
             var dbCoursesInfoDTOs = new BindingList<CoursesInfoDTO>(coursesInfoDTOList);
             dgvCoursesInfo.DataSource = dbCoursesInfoDTOs;
             dgvCoursesInfo.Refresh();
@@ -275,7 +271,7 @@ namespace SchoolOfFineArts
                 return;
             }
 
-            var t = _read.DisplaySingle(dataId, _teacherRepo);
+            var t = _tRepo.GetById(dataId);
             if (t is not null)
             {
                 lblTeacherIdTxt.Text = t.Id.ToString();
@@ -305,7 +301,7 @@ namespace SchoolOfFineArts
                 return;
             }
 
-            var s = _read.DisplaySingle(dataId, _studentRepo);
+            var s = _sRepo.GetById(dataId);
             if (s is not null)
             {
                 lblStudentIdTxt.Text = s.Id.ToString();
@@ -346,7 +342,7 @@ namespace SchoolOfFineArts
                 return;
             }
 
-            var c = _read.DisplaySingle(dataId, _courseRepo);
+            var c = _cRepo.GetById(dataId);
             if (c is not null)
             {
                 if (isCourse)
@@ -399,7 +395,7 @@ namespace SchoolOfFineArts
                 return;
             }
 
-            var ceDTO = _read.DisplaySingle(dataId.cId, dataId.sId, _courseEnrollmentRepo);
+            var ceDTO = _ceRepo.GetById(dataId.cId, dataId.sId);
             if (ceDTO is not null)
             {
                 txtSelectedStudentId.Text = ceDTO.StudentId.ToString();
@@ -416,17 +412,17 @@ namespace SchoolOfFineArts
             if (tabControl1.SelectedIndex == 0)
             {
                 Teacher t = InstantiateTeacher();
-                _create.AddTeacher(t, _teacherRepo);
+                _tRepo.Insert(t);
             }
             else if (tabControl1.SelectedIndex == 1)
             {
                 Student s = InstantiateStudent();
-                _create.AddStudent(s, _studentRepo);
+                _sRepo.Insert(s);
             }
             else if (tabControl1.SelectedIndex == 2)
             {
                 Course c = InstantiateCourse();
-                _create.AddCourse(c, _courseRepo);
+                _cRepo.Insert(c);
             }
             else if (tabControl1.SelectedIndex == 3)
             {
@@ -440,17 +436,17 @@ namespace SchoolOfFineArts
             if (tabControl1.SelectedIndex == 0)
             {
                 Teacher t = InstantiateTeacher();
-                _update.EditTeacher(t, _teacherRepo);
+                _tRepo.Update(t);
             }
             else if (tabControl1.SelectedIndex == 1)
             {
                 Student s = InstantiateStudent();
-                _update.EditStudent(s, _studentRepo);
+                _sRepo.Update(s);
             }
             else if (tabControl1.SelectedIndex == 2)
             {
                 Course c = InstantiateCourse();
-                _update.EditCourse(c, _courseRepo);
+                _cRepo.Update(c);
             }
             ClearForm();
         }
@@ -468,17 +464,17 @@ namespace SchoolOfFineArts
             if (tabControl1.SelectedIndex == 0)
             {
                 var id = Convert.ToInt32(lblTeacherIdTxt.Text);
-                _delete.RemoveTeacher(id, _teacherRepo);
+                _tRepo.Delete(id);
             }
             else if (tabControl1.SelectedIndex == 1)
             {
                 var id = Convert.ToInt32(lblStudentIdTxt.Text);
-                _delete.RemoveStudent(id, _studentRepo);
+                _sRepo.Delete(id);
             }
             else if (tabControl1.SelectedIndex == 2)
             {
                 var id = Convert.ToInt32(lblCourseIdTxt.Text);
-                _delete.RemoveCourse(id, _courseRepo);
+                _cRepo.Delete(id);
             }
             else if (tabControl1.SelectedIndex == 3)
             {
@@ -575,7 +571,7 @@ namespace SchoolOfFineArts
                 return;
             }
 
-            (bool success, string msg) result = _create.AddCourseEnrollment(students, Convert.ToInt32(courseId), courseName, _courseEnrollmentRepo);
+            (bool success, string msg) result = _ceRepo.Insert(students, Convert.ToInt32(courseId), courseName);
 
             MessageBox.Show(result.msg);
 
@@ -615,7 +611,7 @@ namespace SchoolOfFineArts
             }
 
             //delete association
-            (bool success, string msg) result = _delete.RemoveCourseEnrollment(Convert.ToInt32(sId), sName, Convert.ToInt32(cId), cName, _courseEnrollmentRepo);
+            (bool success, string msg) result = _ceRepo.Delete(Convert.ToInt32(sId), sName, Convert.ToInt32(cId), cName);
 
             MessageBox.Show(result.msg);
 

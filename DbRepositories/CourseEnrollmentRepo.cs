@@ -27,7 +27,7 @@ namespace DbRepositories
             }
         }
 
-        public CoursesInfoDTO GetSingle(int courseId, int studentId)
+        public CoursesInfoDTO GetById(int courseId, int studentId)
         {
             using (var context = new SchoolOfFineArtsDbContext(_optionsBuilder.Options))
             {
@@ -36,7 +36,7 @@ namespace DbRepositories
             }
         }
 
-        public (bool, string) Add(List<Student> students, int cId, string cName, CourseEnrollmentRepo ceRepo)
+        public (bool, string) Insert(List<Student> students, int cId, string cName)
         {
             bool modified = false;
             string msg = string.Empty;

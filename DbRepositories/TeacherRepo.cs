@@ -21,7 +21,7 @@ namespace DbRepositories
             }
         }
 
-        public Teacher GetSingle(int dataId)
+        public Teacher GetById(int dataId)
         {
             using (var context = new SchoolOfFineArtsDbContext(_optionsBuilder.Options))
             {
@@ -30,7 +30,7 @@ namespace DbRepositories
             }
         }
 
-        public void Add(Teacher t)
+        public void Insert(Teacher t)
         {
             using (var context = new SchoolOfFineArtsDbContext(_optionsBuilder.Options))
             {

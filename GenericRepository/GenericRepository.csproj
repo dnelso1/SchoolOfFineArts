@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="GenericRepository.cs" />
+    <Compile Remove="IGenericRepository.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="GenericRepository.cs" />
+    <None Include="IGenericRepository.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SchoolOfFineArtsDB\SchoolOfFineArtsDB.csproj" />
+  </ItemGroup>
+
+</Project>
